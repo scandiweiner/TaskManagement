@@ -22,17 +22,15 @@ class TestTask(TestCase):
             last_name='Weiner',
         )
         self.mock_date = datetime.datetime(2021, 1, 1, 10, 10, 10, tzinfo=pytz.UTC)
-        self.task = Task.objects.create(
-            description='Create API for task management',
-        )
 
-    def test_checkin_task(self):
+    def test_checkin_task_user_exists(self):
         data = {
-            'user_id': self.user.id,
+            'user': self.user.username,
             'checkin_date': self.mock_date,
+            'description': 'Create API for task management',
         }
         response = self.client.post(
-            reverse('checkin', args=[self.task.id]),
+            reverse('checkin'),
             data=data,
             content_type='application/json'
         )
@@ -43,19 +41,40 @@ class TestTask(TestCase):
         self.assertEqual(task.description, 'Create API for task management')
         self.assertIsNone(task.checkout_date)
 
+    def test_checkin_task_user_does_not_exists(self):
+        data = {
+            'user': "new_user",
+            'checkin_date': self.mock_date,
+            'description': 'Create API for task management',
+        }
+        response = self.client.post(
+            reverse('checkin'),
+            data=data,
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        task = Task.objects.get(user__username="new_user")
+        self.assertEqual(task.checkin_date, self.mock_date)
+        self.assertEqual(task.description, 'Create API for task management')
+        self.assertIsNone(task.checkout_date)
+        self.assertIsNotNone(User.objects.get(username="new_user"))
+
     def test_cannot_checkin_task_if_user_has_another_task(self):
         # assign user to task and checkin
-        self.task.user = self.user
-        self.task.checkin_date = self.mock_date
-        self.task.save(update_fields=['user', 'checkin_date'])
+        Task.objects.create(
+            user=self.user,
+            checkin_date=self.mock_date,
+            description='Create API for task management',
+        )
 
         data = {
-            'user_id': self.user.id,
+            'user': self.user.username,
             'checkin_date': self.mock_date,
             'description': 'Resolve bugs in a different feature',
         }
         response = self.client.post(
-            reverse('checkin', args=[self.task.id]),
+            reverse('checkin'),
             data=data,
             content_type='application/json'
         )
@@ -73,10 +92,11 @@ class TestTask(TestCase):
             description='Create API for task management',
         )
         data = {
+            'user': self.user.username,
             'checkout_date': self.mock_date + timedelta(hours=2),
         }
         response = self.client.post(
-            reverse('checkout', args=[task.id]),
+            reverse('checkout'),
             data=data,
             content_type='application/json'
         )
