@@ -31,55 +31,52 @@ class Task(models.Model):
     @classmethod
     def checkin(
         cls,
-        task_id: int,
-        user_id: int,
+        user: str,
         checkin_date: datetime.date,
+        description: str,
     ):
         """
-        Check in task for user
-        :param task_id:
-        :param user_id:
+        Create task and check in for user
+        if user doesn't exist - create one
+        :param user:
         :param checkin_date:
+        :param description:
         :return: Task
         :raises
             errors.UserAlreadyHasOpenTask
         """
         with transaction.atomic():
-            if Task.objects.filter(
-                user_id=user_id,
-                checkout_date__isnull=True,
-            ).exists():
-                raise errors.UserAlreadyHasOpenTask
-            else:
-                try:
-                    task = Task.objects.get(
-                        id=task_id,
-                        user__isnull=True,
-                    )
-                    task.user_id = user_id
-                    task.checkin_date = checkin_date
-                    task.save(update_fields=['user_id', 'checkin_date'])
-                except Task.DoesNotExist:
-                    raise Task.DoesNotExist
-                except errors.UserAlreadyHasOpenTask:
+            user, created = User.objects.get_or_create(username=user)
+            if not created:
+                # user can checkin only one task at a time
+                if Task.objects.filter(
+                    user__username=user,
+                ).exists():
                     raise errors.UserAlreadyHasOpenTask
-                except TypeError:
-                    raise TypeError
-                except KeyError:
-                    raise KeyError
+
+            try:
+                task = Task.objects.create(
+                    user=user,
+                    checkin_date=checkin_date,
+                    description=description,
+                )
+            except TypeError:
+                raise TypeError
+            except KeyError:
+                raise KeyError
 
         return task
 
     @classmethod
     def checkout(
         cls,
-        task_id: int,
+        user: int,
         checkout_date: datetime.date,
     ):
         """
         checkout task for user
 
-        :param task_id:
+        :param user:
         :param checkout_date:
         :return: Task
         :raises:
@@ -88,7 +85,7 @@ class Task(models.Model):
         """
         try:
             task = Task.objects.get(
-                id=task_id,
+                user__username=user,
                 checkin_date__isnull=False
             )
             if task.checkout_date is not None:
@@ -101,4 +98,4 @@ class Task(models.Model):
             raise Task.DoesNotExist
 
     def __str__(self):
-        return f'task {self.description}'
+        return f'{self.id} task {self.description}'

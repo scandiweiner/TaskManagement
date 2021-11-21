@@ -27,21 +27,20 @@ def render_response(data, error):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-def checkin_view(request: Request, task_id: int) -> HttpResponse:
+def checkin_view(request: Request) -> HttpResponse:
     """
     view to checkin tasks for user
 
     :raises:
         errors.UserAlreadyHasOpenTask
-        Task.DoesNotExist
     """
     data = json.loads(request.body.decode('utf-8'))
 
     try:
         task = Task.checkin(
-            task_id=task_id,
-            user_id=data['user_id'],
+            user=data['user'],
             checkin_date=data['checkin_date'],
+            description=data['description'],
         )
         data = render_response(
             data=(
@@ -76,7 +75,7 @@ def checkin_view(request: Request, task_id: int) -> HttpResponse:
 
 @csrf_exempt
 @require_http_methods(["POST"])
-def checkout_view(request: Request, task_id: int) -> HttpResponse:
+def checkout_view(request: Request) -> HttpResponse:
     """
     view to checkout tasks for user
 
@@ -88,7 +87,7 @@ def checkout_view(request: Request, task_id: int) -> HttpResponse:
 
     try:
         task = Task.checkout(
-            task_id=task_id,
+            user=data['user'],
             checkout_date=data['checkout_date'],
         )
         data = render_response(

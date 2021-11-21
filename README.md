@@ -36,18 +36,18 @@ yay
 
 ## API examples
 I'm using postman, use whatever you like though
-initial task objects can be created in admin
 
 ### Checkin task
 * **URL**
 
-    POST /task/checkin/{id}/
+    POST /task/checkin/
 
 * **Example request**
 ```json
 {
-  "user_id": 1,
-  "checkin_date": "2020-12-31T17:00:00Z"
+  "user": "username",
+  "checkin_date": "2020-12-31T17:00:00Z",
+  "description": "Do something crazy"
 }
 ```
 
@@ -121,7 +121,7 @@ initial task objects can be created in admin
  ### Task Report
 * **URL**
 
-    GET /report/
+    GET task/report/
     
 * **Success response**
     * code: 200
@@ -145,5 +145,6 @@ manage.py test
 ```
 
 ## Assumptions
-1. A task can be created by any user (one user is giving the task and the other one is doing it)
-2. user cannot checkin to a task that's in progress by other user
+1. Once a user checks in the task is being created
+2. If task is checked in but the user name doesn't exist - create new user
+3. user cannot checkin to a task that's in progress
