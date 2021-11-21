@@ -82,7 +82,7 @@ I'm using postman, use whatever you like though
  ### Checkout task
 * **URL**
 
-    PUT /task/checkout/{id}/
+    POST /task/checkout/
 
 * **Example request**
     ```json
