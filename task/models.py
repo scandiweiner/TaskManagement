@@ -51,6 +51,7 @@ class Task(models.Model):
                 # user can checkin only one task at a time
                 if Task.objects.filter(
                     user__username=user,
+                    checkout_date__isnull=True,
                 ).exists():
                     raise errors.UserAlreadyHasOpenTask
 
@@ -86,7 +87,7 @@ class Task(models.Model):
         try:
             task = Task.objects.get(
                 user__username=user,
-                checkin_date__isnull=False
+                checkout_date__isnull=True,
             )
             if task.checkout_date is not None:
                 raise errors.TaskWasCheckedOut
